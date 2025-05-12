@@ -1,45 +1,47 @@
-import yfinance as yf
+import os
 import pandas as pd
 import numpy as np
 
-msft = yf.Ticker("MSFT")
-apple = yf.Ticker("AAPL")
-nvidia = yf.Ticker("NVDA")
-google = yf.Ticker("GOOGL")
-tesla = yf.Ticker("TSLA")
+# Rutas relativas dentro de tu proyecto
+INPUT_DIR = "data/processed_data"
+OUTPUT_DIR = "data/sequences_ready"
+WINDOW_SIZE = 30
 
-msft_data = msft.history(period="20y")
-apple_data = apple.history(period="20y")
-nvidia_data = nvidia.history(period="20y")
-google_data = google.history(period="20y")
-tesla_data = tesla.history(period="20y")
+# Asegura que la carpeta de salida existe
+os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-tickers = {
-    "MSFT": msft_data,
-    "AAPL": apple_data,
-    "NVDA": nvidia_data,
-    "GOOGL": google_data,
-    "TSLA": tesla_data
-}
+# Columnas normalizadas que se usarán
+normalized_columns = [
+    "Close_Normalized",
+    "Open_Normalized",
+    "High_Normalized",
+    "Low_Normalized",
+    "Volume_Normalized"
+]
 
-# Selecting Close, Open, High, Low, Volume
-for ticker in tickers:
-    tickers[ticker] = tickers[ticker].drop(columns=['Dividends', 'Stock Splits'])
+def create_multivariate_sequences(data, window_size):
+    sequences = []
+    for i in range(len(data) - window_size):
+        seq = data[i:i + window_size]
+        sequences.append(seq)
+    return np.array(sequences)
 
-# Normalizing the data
-def min_max_scaler(price):
-    return (price - price.min()) / (price.max() - price.min())
+# Procesamiento por archivo
+for file in os.listdir(INPUT_DIR):
+    if file.endswith(".csv"):
+        filepath = os.path.join(INPUT_DIR, file)
+        df = pd.read_csv(filepath)
 
-for ticker in tickers:
-    tickers[ticker]['Close_Normalized'] = min_max_scaler(tickers[ticker]['Close'])
-    tickers[ticker]['Open_Normalized'] = min_max_scaler(tickers[ticker]['Open'])
-    tickers[ticker]['High_Normalized'] = min_max_scaler(tickers[ticker]['High'])
-    tickers[ticker]['Low_Normalized'] = min_max_scaler(tickers[ticker]['Low'])
-    tickers[ticker]['Volume_Normalized'] = min_max_scaler(tickers[ticker]['Volume'])
+        if not all(col in df.columns for col in normalized_columns):
+            print(f"Saltando {file}: columnas normalizadas incompletas")
+            continue
 
-for ticker in tickers:
-    print(tickers[ticker].head())
+        data = df[normalized_columns].values
+        sequences = create_multivariate_sequences(data, WINDOW_SIZE)
+        sequences_flat = sequences.reshape(sequences.shape[0], -1)
 
-# Saving data to CSV
-for ticker in tickers:
-    tickers[ticker].to_csv(f"data/{ticker}_data.csv")
+        output_filename = file.replace(".csv", f"_sequences.csv")
+        output_path = os.path.join(OUTPUT_DIR, output_filename)
+        pd.DataFrame(sequences_flat).to_csv(output_path, index=False)
+
+        print(f"✓ {file} → {output_filename} ({sequences.shape[0]} secuencias)")
