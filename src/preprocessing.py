@@ -44,4 +44,4 @@ for file in os.listdir(INPUT_DIR):
         output_path = os.path.join(OUTPUT_DIR, output_filename)
         pd.DataFrame(sequences_flat).to_csv(output_path, index=False)
 
-        print(f"✓ {file} → {output_filename} ({sequences.shape[0]} secuencias)")
+        print(f"{file} → {output_filename} ({sequences.shape[0]} secuencias)")

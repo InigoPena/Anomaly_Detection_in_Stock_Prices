@@ -35,7 +35,7 @@ loss_fn = nn.MSELoss()
 for ticker in tickers:
     print(f"Training {ticker} model...")
     
-    model = LSTMAutoencoder().to(device)  # 💥 Nueva instancia
+    model = LSTMAutoencoder().to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
     
     # Usa el dataloader correspondiente
