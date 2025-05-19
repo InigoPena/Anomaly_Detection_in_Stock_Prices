@@ -4,6 +4,9 @@ import torch.optim as optim
 from torch.utils.data import DataLoader, TensorDataset
 import pandas as pd
 import torch.nn as nn
+import matplotlib.pyplot as plt
+import os
+from pathlib import Path
 
 ####
 # Load Data as data loader
@@ -32,6 +35,9 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Device used for trainig: {device}")
 loss_fn = nn.MSELoss()
 
+current_dir = Path(__file__).resolve().parent
+performance_dir = current_dir / "model_performances"
+
 for ticker in tickers:
     print(f"Training {ticker} model...")
     
@@ -42,6 +48,8 @@ for ticker in tickers:
     data = DataLoader(TensorDataset(torch.tensor(sequences[ticker.lower() + "_seq"], dtype=torch.float32)), 
                       batch_size=batch_size, shuffle=True)
     
+    loss_history = []
+
     for epoch in range(10):
         model.train()
         total_loss = 0
@@ -53,8 +61,26 @@ for ticker in tickers:
             loss.backward()
             optimizer.step()
             total_loss += loss.item()
+        epoch_loss = total_loss / len(data)
+        loss_history.append(epoch_loss)
         print(f"Epoch {epoch+1}/10 - Loss: {total_loss / len(data):.6f}")
+    
+    # Save The Loss History
+    plt.figure(figsize=(8, 4))
+    plt.plot(range(1, 11), loss_history, marker='o', label='Loss')
+    plt.title(f"Training Loss - {ticker}")
+    plt.xlabel("Epoch")
+    plt.ylabel("Loss")
+    plt.yscale("log")
+    plt.grid()
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(performance_dir / f"{ticker.lower()}_loss.png")
+    plt.close()
+    print(f"Loss plot saved to model_performances/{ticker.lower()}_loss.png\n")
 
-    # Guarda el modelo con el nombre del ticker
+    # Save The Model
     torch.save(model.state_dict(), f"models/autoencoders/{ticker.lower()}_lstm_autoencoder.pth")
     print("\nModel saved\n")
+
+
