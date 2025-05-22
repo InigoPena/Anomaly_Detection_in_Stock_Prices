@@ -23,7 +23,7 @@ sequences = {}
 for ticker in tickers:
     file_path = f"{sequence_dir}/{ticker}_data_sequences.csv"
     df = pd.read_csv(file_path)
-    arr = df.values.reshape(-1, window_size, num_features) # Ecapsue the days in a window by its 5 features
+    arr = df.values.reshape(-1, window_size, num_features) # Encapsule the days in a window by its 5 features
     sequences[ticker.lower() + "_seq"] = arr
 
 ###
@@ -80,7 +80,7 @@ for ticker in tickers:
     print(f"Loss plot saved to model_performances/{ticker.lower()}_loss.png\n")
 
     # Save The Model
-    torch.save(model.state_dict(), f"models/autoencoders/{ticker.lower()}_lstm_autoencoder.pth")
+    torch.save(model.state_dict(), f"models/lstm/{ticker.lower()}_lstm_autoencoder.pth")
     print("\nModel saved\n")
 
 
